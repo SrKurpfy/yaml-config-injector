@@ -1,0 +1,11 @@
+settings:
+  lack_perm_message: '&cYou do not have permission to perform this command.'
+  price: 300
+
+ores:
+  DIAMOND:
+    price: 800
+  GOLD:
+    price: 500
+  IRON:
+    price: 150

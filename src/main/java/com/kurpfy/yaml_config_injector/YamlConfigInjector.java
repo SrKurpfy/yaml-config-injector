@@ -2,6 +2,7 @@ package com.kurpfy.yaml_config_injector;
 
 import com.kurpfy.yaml_config_injector.adapter.FieldAdapter;
 import com.kurpfy.yaml_config_injector.annotation.Inject;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -19,19 +20,19 @@ public class YamlConfigInjector {
     public YamlConfigInjector() {
         this.adapters = new HashSet<>();
 
-        addAdapter(String.class, MemorySection::getString);
-        addAdapter(Integer.class, MemorySection::getInt);
-        addAdapter(Long.class, MemorySection::getLong);
-        addAdapter(Double.class, MemorySection::getDouble);
+        addAdapter(String.class, ConfigurationSection::getString);
+        addAdapter(Integer.class, ConfigurationSection::getInt);
+        addAdapter(Long.class, ConfigurationSection::getLong);
+        addAdapter(Double.class, ConfigurationSection::getDouble);
         addAdapter(Short.class, (configuration, s) -> Double.valueOf(configuration.getDouble(s)).shortValue());
-        addAdapter(ItemStack.class, MemorySection::getItemStack);
+        addAdapter(ItemStack.class, ConfigurationSection::getItemStack);
     }
 
     public void addAdapter(FieldAdapter<?> toAdd) {
         adapters.add(toAdd);
     }
 
-    public <T> void addAdapter(Class<T> clazz, BiFunction<FileConfiguration, String, T> function) {
+    public <T> void addAdapter(Class<T> clazz, BiFunction<ConfigurationSection, String, T> function) {
         adapters.add(new FieldAdapter<T>() {
             @Override
             public Class<T> getAdaptClass() {
@@ -39,8 +40,8 @@ public class YamlConfigInjector {
             }
 
             @Override
-            public T adapt(FileConfiguration configuration, String section) {
-                return function.apply(configuration, section);
+            public T adapt(ConfigurationSection configurationSection, String section) {
+                return function.apply(configurationSection, section);
             }
         });
     }
@@ -59,13 +60,13 @@ public class YamlConfigInjector {
         return null;
     }
 
-    public void inject(FileConfiguration configuration, Object object) throws IllegalAccessException {
+    public void inject(ConfigurationSection section, Object object) throws IllegalAccessException {
         for (Field field : object.getClass().getFields()) {
             final Inject annotation = field.getAnnotation(Inject.class);
             if(annotation == null) continue;
 
             final FieldAdapter<?> adapter = getAdapter(field.getType());
-            final Object adapt = adapter.adapt(configuration, annotation.value());
+            final Object adapt = adapter.adapt(section, annotation.value());
 
             field.set(object, adapt);
         }
